@@ -456,6 +456,7 @@ class Task(abc.ABC):
                 gen_prefix=self.doc_to_prefix(doc),
             )
 
+            breakpoint()
             # TODO: we should override self.config.repeats if doing greedy gen so users don't waste time+compute
             inst = self.construct_requests(
                 doc=doc,

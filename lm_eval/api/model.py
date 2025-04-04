@@ -367,6 +367,7 @@ class TemplateLM(LM):
         self, requests, disable_tqdm: bool = False
     ) -> List[Tuple[float, bool]]:
         new_reqs = []
+        breakpoint()
         for context, continuation in [req.args for req in requests]:
             if context == "":
                 # BOS or EOS as context

@@ -62,7 +62,7 @@ def simple_evaluate(
     limit: Optional[Union[int, float]] = None,
     bootstrap_iters: int = 100000,
     check_integrity: bool = False,
-    write_out: bool = False,
+    write_out: bool = True,
     log_samples: bool = True,
     evaluation_tracker: Optional[EvaluationTracker] = None,
     system_instruction: Optional[str] = None,
@@ -313,7 +313,7 @@ def simple_evaluate(
                 adjusted_task_dict[task_name] = task_obj
 
         return adjusted_task_dict
-
+    breakpoint()
     task_dict = _adjust_config(task_dict)
 
     if check_integrity:
@@ -584,6 +584,7 @@ def evaluate(
             )
             for doc_id, doc in doc_iterator:
                 requests = instances_by_doc_id[doc_id]
+                breakpoint()
                 metrics = task.process_results(
                     doc, [req.filtered_resps[filter_key] for req in requests]
                 )
