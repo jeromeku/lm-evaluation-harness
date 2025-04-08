@@ -118,7 +118,7 @@ class VLLM(TemplateLM):
             eval_logger.info("Manual batching is not compatible with data parallelism.")
 
         from transformers import AutoConfig
-        breakpoint()
+
         if pretrained.endswith(".gguf"):
             self._config = AutoConfig.from_pretrained(
                 original_model_id, trust_remote_code=trust_remote_code, revision=revision
