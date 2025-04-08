@@ -387,7 +387,6 @@ class EvaluationTracker:
         #     "org__model_name__results": "2021-09-01T12:00:00"
         # }
         latest_task_results_datetime = defaultdict(lambda: datetime.min.isoformat())
-
         for file_path in sample_files:
             file_path = Path(file_path)
             filename = file_path.name

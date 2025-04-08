@@ -4,9 +4,13 @@ from importlib.metadata import version
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple, Union
 
+import ray
 from more_itertools import distribute
 from packaging.version import parse as parse_version
 from tqdm import tqdm
+from vllm import LLM, SamplingParams
+from vllm.lora.request import LoRARequest
+from vllm.transformers_utils.tokenizer import get_tokenizer
 
 from lm_eval.api.instance import Instance
 from lm_eval.api.model import TemplateLM
@@ -22,14 +26,6 @@ from lm_eval.utils import (
     make_disjoint_window,
 )
 
-
-try:
-    import ray
-    from vllm import LLM, SamplingParams
-    from vllm.lora.request import LoRARequest
-    from vllm.transformers_utils.tokenizer import get_tokenizer
-except ModuleNotFoundError:
-    pass
 
 if TYPE_CHECKING:
     pass
@@ -65,23 +61,31 @@ class VLLM(TemplateLM):
         device: str = "cuda",
         data_parallel_size: int = 1,
         lora_local_path: str = None,
+        model_config_path: str = None,
+        original_model_id: str = None,
         **kwargs,
     ):
+
+        # Fail fast if using vllm with gguf models
+        if pretrained.endswith(".gguf"):
+            assert original_model_id is not None, "original_model_id must be provided for GGUF models for tokenizer to be loaded correctly"
+
         super().__init__()
 
-        if not find_spec("vllm"):
-            raise ModuleNotFoundError(
-                "attempted to use 'vllm' LM type, but package `vllm` is not installed. "
-                "Please install vllm via `pip install lm-eval[vllm]` or `pip install -e .[vllm]`"
-            )
+        # if not find_spec("vllm"):
+        #     raise ModuleNotFoundError(
+        #         "attempted to use 'vllm' LM type, but package `vllm` is not installed. "
+        #         "Please install vllm via `pip install lm-eval[vllm]` or `pip install -e .[vllm]`"
+        #     )
 
-        assert max_length is None or max_model_len is None, (
-            "Either max_length or max_model_len may be provided, but not both"
-        )
+        # assert max_length is None or max_model_len is None, (
+        #     "Either max_length or max_model_len may be provided, but not both"
+        # )
 
         self._max_length = max_model_len if max_model_len is not None else max_length
         self.tensor_parallel_size = int(tensor_parallel_size)
         self.data_parallel_size = int(data_parallel_size)
+        
         self.model_args = {
             "model": pretrained,
             "gpu_memory_utilization": float(gpu_memory_utilization),
@@ -114,12 +118,20 @@ class VLLM(TemplateLM):
             eval_logger.info("Manual batching is not compatible with data parallelism.")
 
         from transformers import AutoConfig
+        breakpoint()
+        if pretrained.endswith(".gguf"):
+            self._config = AutoConfig.from_pretrained(
+                original_model_id, trust_remote_code=trust_remote_code, revision=revision
+            )
+        else:
+            self._config = AutoConfig.from_pretrained(
+                pretrained, trust_remote_code=trust_remote_code, revision=revision
+            )
 
-        self._config = AutoConfig.from_pretrained(
-            pretrained, trust_remote_code=trust_remote_code, revision=revision
-        )
+        tokenizer_name = original_model_id if original_model_id else pretrained
+        eval_logger.info(f"Using tokenizer: {tokenizer_name}")
         self.tokenizer = get_tokenizer(
-            tokenizer if tokenizer else pretrained,
+            tokenizer if tokenizer else tokenizer_name,
             tokenizer_mode=tokenizer_mode,
             trust_remote_code=trust_remote_code,
             revision=tokenizer_revision,

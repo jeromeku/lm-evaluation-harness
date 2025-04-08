@@ -26,7 +26,7 @@ HIGHER_IS_BETTER_SYMBOLS = {
 }
 
 
-def setup_logging(verbosity=logging.INFO):
+def setup_logging(verbosity=logging.DEBUG):
     # Configure the root logger
     class CustomFormatter(logging.Formatter):
         def format(self, record):
@@ -35,7 +35,7 @@ def setup_logging(verbosity=logging.INFO):
             return super().format(record)
 
     formatter = CustomFormatter(
-        "%(asctime)s %(levelname)-8s [%(name)s:%(lineno)d] %(message)s",
+        "%(asctime)s %(levelname)-8s [%(pathname)s:%(lineno)d] %(message)s",
         datefmt="%Y-%m-%d:%H:%M:%S",
     )
 
